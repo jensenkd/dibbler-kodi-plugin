@@ -15,7 +15,7 @@ import sendRequest
 
 def sync(self, videosXBMC, videosSORT):
     
-    for table in videosSORT:
+    for table in videosSORT: #'movies', 'tvshows', 'episodes'
         
         # check hash video library
         if hashlib.md5(str(videosXBMC[table])).hexdigest() == self.hashSITE[table]:
@@ -27,8 +27,8 @@ def sync(self, videosXBMC, videosSORT):
             self.cleanNeeded = True
             self.imageNeeded = True
             
-            # get id and hash from site
-            videosSite = sendRequest.send(self, 'showvideo&table=' + table, '')
+            # get id and hash from site TODO change this to pull object graph
+            videosSite = sendRequest.getMovieHashList(self)
             debug.debug('[' + table + 'SITE]: ' + str(videosSite))
             
             # prepare videos to add and remove
@@ -73,7 +73,7 @@ def sync(self, videosXBMC, videosSORT):
                 
             # update hash
             value = {table: hashlib.md5(str(videosXBMC[table])).hexdigest()}
-            sendRequest.send(self, 'updatehash', value)
+            sendRequest.updateHashes(self, value)
         
 def add(self, videosXBMC, videoToAdd, table, opt):
     
@@ -93,8 +93,8 @@ def add(self, videosXBMC, videoToAdd, table, opt):
         # get values
         values = prepareValues.prep(self, videosXBMC[table][video], table)
         
-        # send requst
-        if sendRequest.send(self, opt + 'video&t=' + table, values) is False:
+        # send requst to post new Video
+        if sendRequest.postAddVideo(self, values) is False:
             return False
         else:
             addedCount += 1
@@ -114,7 +114,7 @@ def remove(self, videoToRemove, table):
         values[removedCount] = video
     
     # send requst
-    if sendRequest.send(self, 'removevideo&t=' + table, values) is False:
+    if sendRequest.removeMovie(self, values) is False:
         return False
         
     if removedCount > 0:

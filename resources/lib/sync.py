@@ -68,7 +68,8 @@ def start(self):
         self.setXBMC['URL'] = self.setXBMC['URL'] + '/'
     if self.setXBMC['URL'][:7] != 'http://':
         self.setXBMC['URL'] = 'http://' + self.setXBMC['URL']
-    self.setXBMC['URL'] = self.setXBMC['URL'] + 'sync.php?' + 'token=' + self.setXBMC['Token'] + '&option='
+        
+    self.setXBMC['RootURL'] = self.setXBMC['URL'] + 'api/'    
     
     check(self)
 
@@ -76,7 +77,7 @@ def start(self):
 def check(self):
     
     # get settings
-    self.setSITE = sendRequest.send(self, 'checksettings')
+    self.setSITE = sendRequest.getSettings(self)
     if self.setSITE is False:
         debug.notify(__lang__(32100).encode('utf-8'))
         return False
@@ -100,14 +101,6 @@ def check(self):
         if isMaster == 0:
             return False
     
-    # check version
-    if 'version' not in self.setSITE or self.setSITE['version'] < self.versionWebScript:
-        debug.notify(__lang__(32109).encode('utf-8'))
-        debug.debug('Wrong Version of web script. Update is needed to version ' + self.versionWebScript + ' or higher')
-        return False
-    else:
-        debug.debug('Version is valid')
-    
     # check token
     if hashlib.md5(self.setXBMC['Token']).hexdigest() != self.setSITE['token_md5']:
         debug.notify(__lang__(32101).encode('utf-8'))
@@ -117,9 +110,10 @@ def check(self):
         debug.debug('Token is valid')
     
     # get hash tables from site
-    self.hashSITE = sendRequest.send(self, 'showhash')
+    self.hashSITE = sendRequest.getHashes(self)
     if self.hashSITE is False:
         return False
+        
     # reset hash if forced start
     if self.forcedStart == True:
         for t in self.hashSITE:
@@ -163,12 +157,12 @@ def check(self):
     
     # get videos from XBMC
     dataSORT                            = {}
-    dataSORT['videos']                  = ['movies', 'tvshows', 'episodes']
+    dataSORT['videos']                  = ['movies'] ##Only movies for now, 'tvshows', 'episodes']
     
     dataSORT['images']                  = ['movies', 'tvshows', 'episodes', 'actors']
     dataSORT['movies']                  = ['poster', 'fanart', 'exthumb']
-    dataSORT['tvshows']                 = ['poster', 'fanart']
-    dataSORT['episodes']                = ['poster']
+    #dataSORT['tvshows']                 = ['poster', 'fanart']
+    #dataSORT['episodes']                = ['poster']
     dataSORT['actors']                  = ['thumb']
     
     dataXBMC = getDataFromXBMC(self, dataSORT)
@@ -181,33 +175,34 @@ def check(self):
         return False
     
     # sync images
-    debug.debug('=== SYNC IMAGES ===')
-    syncImage.sync(self, dataXBMC['images'], dataSORT)
+    ## DISABLE IMAGES FOR NOW
+    ##debug.debug('=== SYNC IMAGES ===')
+    ##syncImage.sync(self, dataXBMC['images'], dataSORT)
     
     # send webserver settings
-    if self.setSITE['xbmc_auto_conf_remote'] == '1':
-        debug.debug('=== SYNC WEBSERVER SETTINGS ===')
-        conf_remote = ['services.webserver', 'services.webserverport', 'services.webserverusername', 'services.webserverpassword']
-        send_conf = {}
-        for s in conf_remote:
-            jsonGet = xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.GetSettingValue", "params":{"setting": "' + s + '"},"id":1}')
-            jsonGet = unicode(jsonGet, 'utf-8', errors='ignore')
-            jsonGetResponse = json.loads(jsonGet)
-            send_conf[s.replace('services.', '')] = jsonGetResponse['result']['value']
-        if send_conf['webserver'] == False:
-            debug.notify(__lang__(32122).encode('utf-8'))
-            debug.debug('Webserver is disabled')
-        else:
-            sendRequest.send(self, 'autoconfremote', send_conf)
+#    if self.setSITE['xbmc_auto_conf_remote'] == '1':
+#        debug.debug('=== SYNC WEBSERVER SETTINGS ===')
+#        conf_remote = ['services.webserver', 'services.webserverport', 'services.webserverusername', 'services.webserverpassword']
+#        send_conf = {}
+#        for s in conf_remote:
+#            jsonGet = xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.GetSettingValue", "params":{"setting": "' + s + '"},"id":1}')
+#            jsonGet = unicode(jsonGet, 'utf-8', errors='ignore')
+#            jsonGetResponse = json.loads(jsonGet)
+#            send_conf[s.replace('services.', '')] = jsonGetResponse['result']['value']
+#        if send_conf['webserver'] == False:
+#            debug.notify(__lang__(32122).encode('utf-8'))
+#            debug.debug('Webserver is disabled')
+#        else:
+#            sendRequest.send(self, 'autoconfremote', send_conf)
     
     # start generate banner
-    debug.debug('=== GENREATE BANNER ===')
-    sendRequest.send(self, 'generatebanner', {'banner': ''})
+ #   debug.debug('=== GENREATE BANNER ===')
+ #   sendRequest.send(self, 'generatebanner', {'banner': ''})
     
     # start clean database
     if self.cleanNeeded is True:
         debug.debug('=== CLEAN DATABASE ===')
-        sendRequest.send(self, 'cleandb', {'clean': ''})
+#FIX LATER        sendRequest.send(self, 'cleandb', {'clean': ''})
     
 def getDataFromXBMC(self, dataSORT):
     
